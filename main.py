@@ -69,6 +69,11 @@ def write_json_to_file(json_data: dict[str, str], file_path: str):
 def read_images_from_folder(path):
     for file_name in os.listdir(path):
         if file_name.lower().endswith('.jpg'):
+            # Check for existing JSON file, and skip if it exists
+            json_file_path = os.path.join(path, file_name.split('.')[0] + '-test.json')
+            if os.path.exists(json_file_path):
+                continue
+
             image_path = os.path.join(path, file_name)
             camera, lens_type, aperture, iso, focal_length, datetime_original = extract_exif_data(image_path)
             exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length)
