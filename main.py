@@ -2,9 +2,9 @@ import base64
 import json
 import os
 
+import openai
 from PIL import Image, ExifTags
 from dotenv import load_dotenv
-import openai
 from openai import OpenAI
 
 load_dotenv()  # take environment variables from .env.
@@ -155,7 +155,8 @@ def read_images_from_folder(path):
             # Check for existing JSON file, and skip if it exists
             json_file_path = os.path.join(path, file_name.split('.')[0] + '.json')
             image_path = os.path.join(path, file_name)
-            camera, lens_type, aperture, iso, focal_length, shutter_speed, datetime_original = extract_exif_data(image_path)
+            camera, lens_type, aperture, iso, focal_length, shutter_speed, datetime_original \
+                = extract_exif_data(image_path)
             exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length, shutter_speed)
 
             print(exif)
