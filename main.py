@@ -26,23 +26,27 @@ def extract_exif_data(image_path):
             aperture = str(exif_ifd.get(33437))  # Tag for FNumber
             iso = str(exif_ifd.get(34855))  # Tag for ISOSpeedRatings
             focal_length = str(exif_ifd.get(37386))  # Tag for FocalLength
+            exposure_time = exif_ifd.get(33434)  # Tag for ExposureTime
+            shutter_speed = f"1/{str(1 / exposure_time)}"
             datetime_original = str(exif_ifd.get(36867))  # Tag for DateTimeOriginal
-            return camera, lens_type, aperture, iso, focal_length, datetime_original
+            return camera, lens_type, aperture, iso, focal_length, shutter_speed, datetime_original
         else:
-            return None, None, None, None, None
+            return None, None, None, None, None, None
 
 
 def compose_exif_json(camera: str,
                       lens_type: str,
                       aperture: str,
                       iso: str,
-                      focal_length: str) -> dict[str, str]:
+                      focal_length: str,
+                      shutter_speed: str) -> dict[str, str]:
     exif = {
         'camera': camera,
         'lens': lens_type,
         'aperture': aperture,
         'iso': iso,
-        'focal_length': focal_length
+        'focal_length': focal_length,
+        'shutter_speed': shutter_speed
     }
 
     return exif
@@ -149,20 +153,23 @@ def read_images_from_folder(path):
     for file_name in os.listdir(path):
         if file_name.lower().endswith('.jpg'):
             # Check for existing JSON file, and skip if it exists
-            json_file_path = os.path.join(path, file_name.split('.')[0] + '-test.json')
+            json_file_path = os.path.join(path, file_name.split('.')[0] + '.json')
+            image_path = os.path.join(path, file_name)
+            camera, lens_type, aperture, iso, focal_length, shutter_speed, datetime_original = extract_exif_data(image_path)
+            exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length, shutter_speed)
+
+            print(exif)
+
             if os.path.exists(json_file_path):
+                print(f'JSON file for {file_name} already exists. Skipping ...')
                 continue
 
-            image_path = os.path.join(path, file_name)
-            camera, lens_type, aperture, iso, focal_length, datetime_original = extract_exif_data(image_path)
-            exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length)
             description = generate_image_caption(image_path)
             if description is None:
+                print(f'No description for {file_name} could be generated. Skipping ...')
                 continue
 
             image_data = compose_image_json(image_path, exif, datetime_original, description)
-
-            print(image_data)
 
             # Write image data to JSON file
             json_file_path = os.path.join(path, file_name.split('.')[0] + '-test.json')
