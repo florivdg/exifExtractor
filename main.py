@@ -63,6 +63,7 @@ def compose_image_json(image_path: str, exif: dict[str, str], datetime_original:
         'title': '',
         'image': './{f}'.format(f=filename),
         'alt': description,
+        'location': '',
         'date': taken_on,
         'tags': [],
         'exif': exif
@@ -78,6 +79,9 @@ def encode_image(image_path):
 
 
 def generate_image_caption(image_path: str) -> str:
+    # Log message to console
+    print(f'Using GPT-4 Vision API for describing {image_path} ...')
+
     # Encode image
     base64_image = encode_image(image_path)
 
@@ -89,7 +93,7 @@ def generate_image_caption(image_path: str) -> str:
                 {
                     "type": "text",
                     "text": "Create a good and detailed description of this image that would also work as an alt "
-                            "text for this image."
+                            "text for this image. Return the description only without any extra notes or information."
                 },
                 {
                     "type": "image_url",
@@ -106,6 +110,8 @@ def generate_image_caption(image_path: str) -> str:
 
     # Get description from chat completion
     description = chat_completion.choices[0].message.content
+
+    print('\n' + description + '\n')
 
     return description
 
