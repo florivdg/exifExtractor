@@ -47,7 +47,7 @@ def compose_exif_json(camera: str,
     return exif
 
 
-def compose_image_json(image_path: str, exif: dict[str, str], datetime_original: str, description: str):
+def compose_image_json(image_path: str, exif: dict[str, str], datetime_original: str, description: dict[str, str]):
     # Get filename
     filename = os.path.basename(image_path)
 
@@ -60,12 +60,12 @@ def compose_image_json(image_path: str, exif: dict[str, str], datetime_original:
 
     image = {
         'id': image_id,
-        'title': '',
+        'title': description['title_ideas'],
         'image': './{f}'.format(f=filename),
-        'alt': description,
+        'alt': description['description'],
         'location': '',
         'date': taken_on,
-        'tags': [],
+        'tags': description['tags'],
         'exif': exif
     }
 
@@ -78,12 +78,22 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def generate_image_caption(image_path: str) -> str:
+def generate_image_caption(image_path: str) -> dict[str, str]:
     # Log message to console
     print(f'Using GPT-4 Vision API for describing {image_path} ...')
 
     # Encode image
     base64_image = encode_image(image_path)
+
+    prompt = ("Create an accurate and detailed description of this image that would also work as an alt text. Also "
+              "come up with 5 title suggestions for this image. At last suggest 5 tags that suit the image "
+              "description. These tags should be single words only. Identify the main subject or theme and make sure "
+              "to put the according tag first. Return the description, the title suggestions and "
+              "tags as JSON without any extra notes or information. Return a JSON string that can be parsed. Do not "
+              "use markdown code blocks. Use the following JSON format: \n\n\"\"\"{\"title_ideas\": [\"\", \"\", "
+              "\"\", \"\", \"\"],\"description\": \"\",\"tags\": [\"\", \"\", \"\", \"\", \"\"]}\"\"\"")
+
+    print(prompt)
 
     # Create payload
     messages = [
@@ -92,8 +102,7 @@ def generate_image_caption(image_path: str) -> str:
             "content": [
                 {
                     "type": "text",
-                    "text": "Create a good and detailed description of this image that would also work as an alt "
-                            "text for this image. Return the description only without any extra notes or information."
+                    "text": prompt,
                 },
                 {
                     "type": "image_url",
@@ -106,14 +115,17 @@ def generate_image_caption(image_path: str) -> str:
     ]
 
     # Create chat completion
-    chat_completion = client.chat.completions.create(model='gpt-4-vision-preview', messages=messages, max_tokens=1024)
+    chat_completion = client.chat.completions.create(model='gpt-4-vision-preview',
+                                                     messages=messages,
+                                                     max_tokens=2048)
 
-    # Get description from chat completion
+    # Get description results from chat completion
     description = chat_completion.choices[0].message.content
 
-    print('\n' + description + '\n')
+    # Parse into object
+    json_description = json.loads(description)
 
-    return description
+    return json_description
 
 
 def write_json_to_file(json_data: dict[str, str], file_path: str):
