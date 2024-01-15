@@ -172,7 +172,7 @@ def read_images_from_folder(path):
             image_data = compose_image_json(image_path, exif, datetime_original, description)
 
             # Write image data to JSON file
-            json_file_path = os.path.join(path, file_name.split('.')[0] + '-test.json')
+            json_file_path = os.path.join(path, file_name.split('.')[0] + '.json')
             write_json_to_file(image_data, json_file_path)
 
 
