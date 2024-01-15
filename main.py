@@ -1,6 +1,16 @@
 import json
 import os
 from PIL import Image, ExifTags
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+
+
+# Instantiate an OpenAI API client
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
 
 
 def extract_exif_data(image_path):
