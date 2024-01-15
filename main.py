@@ -1,11 +1,12 @@
+import base64
 import json
 import os
+
 from PIL import Image, ExifTags
-from openai import OpenAI
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()  # take environment variables from .env.
-
 
 # Instantiate an OpenAI API client
 client = OpenAI(
@@ -46,7 +47,7 @@ def compose_exif_json(camera: str,
     return exif
 
 
-def compose_image_json(image_path: str, exif: dict[str, str], datetime_original: str):
+def compose_image_json(image_path: str, exif: dict[str, str], datetime_original: str, description: str):
     # Get filename
     filename = os.path.basename(image_path)
 
@@ -61,13 +62,52 @@ def compose_image_json(image_path: str, exif: dict[str, str], datetime_original:
         'id': image_id,
         'title': '',
         'image': './{f}'.format(f=filename),
-        'alt': '',
+        'alt': description,
         'date': taken_on,
         'tags': [],
         'exif': exif
     }
 
     return image
+
+
+# Function to encode the image
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+
+def generate_image_caption(image_path: str) -> str:
+    # Encode image
+    base64_image = encode_image(image_path)
+
+    # Create payload
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Create a good and detailed description of this image that would also work as an alt "
+                            "text for this image."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        }
+    ]
+
+    # Create chat completion
+    chat_completion = client.chat.completions.create(model='gpt-4-vision-preview', messages=messages, max_tokens=1024)
+
+    # Get description from chat completion
+    description = chat_completion.choices[0].message.content
+
+    return description
 
 
 def write_json_to_file(json_data: dict[str, str], file_path: str):
@@ -87,7 +127,8 @@ def read_images_from_folder(path):
             image_path = os.path.join(path, file_name)
             camera, lens_type, aperture, iso, focal_length, datetime_original = extract_exif_data(image_path)
             exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length)
-            image_data = compose_image_json(image_path, exif, datetime_original)
+            description = generate_image_caption(image_path)
+            image_data = compose_image_json(image_path, exif, datetime_original, description)
 
             print(image_data)
 
