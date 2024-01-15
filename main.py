@@ -4,6 +4,7 @@ import os
 
 from PIL import Image, ExifTags
 from dotenv import load_dotenv
+import openai
 from openai import OpenAI
 
 load_dotenv()  # take environment variables from .env.
@@ -78,7 +79,7 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def generate_image_caption(image_path: str) -> dict[str, str]:
+def generate_image_caption(image_path: str) -> dict[str, str] or None:
     # Log message to console
     print(f'Using GPT-4 Vision API for describing {image_path} ...')
 
@@ -92,8 +93,6 @@ def generate_image_caption(image_path: str) -> dict[str, str]:
               "tags as JSON without any extra notes or information. Return a JSON string that can be parsed. Do not "
               "use markdown code blocks. Use the following JSON format: \n\n\"\"\"{\"title_ideas\": [\"\", \"\", "
               "\"\", \"\", \"\"],\"description\": \"\",\"tags\": [\"\", \"\", \"\", \"\", \"\"]}\"\"\"")
-
-    print(prompt)
 
     # Create payload
     messages = [
@@ -114,18 +113,30 @@ def generate_image_caption(image_path: str) -> dict[str, str]:
         }
     ]
 
-    # Create chat completion
-    chat_completion = client.chat.completions.create(model='gpt-4-vision-preview',
-                                                     messages=messages,
-                                                     max_tokens=2048)
+    try:
+        # Create chat completion
+        chat_completion = client.chat.completions.create(model='gpt-4-vision-preview',
+                                                         messages=messages,
+                                                         max_tokens=2048)
+        # Get description results from chat completion
+        description = chat_completion.choices[0].message.content
 
-    # Get description results from chat completion
-    description = chat_completion.choices[0].message.content
+        # Parse into object
+        json_description = json.loads(description)
 
-    # Parse into object
-    json_description = json.loads(description)
+        return json_description
 
-    return json_description
+    except openai.APIConnectionError as e:
+        print("The server could not be reached")
+        print(e.__cause__)  # an underlying Exception, likely raised within httpx.
+    except openai.RateLimitError:
+        print("A 429 status code was received; we should back off a bit.")
+    except openai.APIStatusError as e:
+        print("Another non-200-range status code was received")
+        print(e.status_code)
+        print(e.response)
+
+    return None
 
 
 def write_json_to_file(json_data: dict[str, str], file_path: str):
@@ -146,6 +157,9 @@ def read_images_from_folder(path):
             camera, lens_type, aperture, iso, focal_length, datetime_original = extract_exif_data(image_path)
             exif = compose_exif_json(camera, lens_type, aperture, iso, focal_length)
             description = generate_image_caption(image_path)
+            if description is None:
+                continue
+
             image_data = compose_image_json(image_path, exif, datetime_original, description)
 
             print(image_data)
