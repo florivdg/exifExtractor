@@ -152,8 +152,10 @@ def write_json_to_file(json_data: dict[str, str], file_path: str):
 def read_images_from_folder(path):
     for file_name in os.listdir(path):
         if file_name.lower().endswith('.jpg'):
-            # Check for existing JSON file, and skip if it exists
-            json_file_path = os.path.join(path, file_name.split('.')[0] + '.json')
+            # Compose JSON file name
+            json_file_name = file_name.split('.')[0] + '.json'
+
+            # Load EXIF data
             image_path = os.path.join(path, file_name)
             camera, lens_type, aperture, iso, focal_length, shutter_speed, datetime_original \
                 = extract_exif_data(image_path)
@@ -161,21 +163,32 @@ def read_images_from_folder(path):
 
             print(exif)
 
+            # Check for existing JSON file, and skip if it exists
+            json_file_path = os.path.join(path, json_file_name)
             if os.path.exists(json_file_path):
                 print(f'JSON file for {file_name} already exists. Skipping ...')
                 continue
 
+            # Let AI generate an image description, title suggestions and tags
             description = generate_image_caption(image_path)
             if description is None:
                 print(f'No description for {file_name} could be generated. Skipping ...')
                 continue
 
+            # Compose final image meta data in JSON format
             image_data = compose_image_json(image_path, exif, datetime_original, description)
 
             # Write image data to JSON file
-            json_file_path = os.path.join(path, file_name.split('.')[0] + '.json')
+            json_file_path = os.path.join(path, json_file_name)
             write_json_to_file(image_data, json_file_path)
 
 
-folder_path = '/Users/flori/Sites/flori-dev/src/content/grid'
-read_images_from_folder(folder_path)
+# Load folder path as argument
+folder_path = input("Enter folder path: ")
+
+# Check if folder exists
+if os.path.exists(folder_path):
+    # Read images from folder
+    read_images_from_folder(folder_path)
+else:
+    print(f'Folder {folder_path} does not exist.')
