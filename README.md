@@ -15,7 +15,7 @@ This project is a Python script that extracts metadata from images and generates
 1. Clone the repository to your local machine.
 2. Install the required dependencies using pip:
 ```python
-pip install pillow openai python-dotenv
+pip install -r requirements.txt
 ```
 3. Create a `.env` file in the root directory of the project and add your OpenAI API key:
 ```env
