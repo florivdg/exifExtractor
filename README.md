@@ -45,3 +45,31 @@ The main functionalities of the script are:
 * `generate_image_caption(image_path)`: Generates a description, title suggestions, and tags for an image using the OpenAI API.
 * `write_json_to_file(json_data, file_path)`: Writes a JSON object to a file.
 * `read_images_from_folder(path)`: Reads images from a folder, processes each image, and writes the results to a JSON file.
+
+## Example Output
+
+```json
+{
+  "id": "2R9A1905",
+  "title": [
+    "Voices in Dusk",
+    "Stand Against Intolerance",
+    "Messages Against Hate",
+    "Standing Together in Solidarity",
+    "Twilight Rally for Change"
+  ],
+  "image": "./2R9A1905.jpg",
+  "alt": "A diverse group of individuals are gathered in a twilight setting, participating in a protest. The crowd is dense and filled with various expressions of determination and focus. Several homemade signs are held aloft, with one prominently displayed in the center reading 'MY MOM TOLD ME NOT TO TALK TO NAZIS!' Other signs with messages are partially visible around it. The lighting suggests either dawn or dusk, and the urban setting provides a backdrop of buildings with the sky showing a gentle gradient from blue to orange.",
+  "location": "Bayreuth, Germany",
+  "date": "2024-01-22",
+  "tags": ["protest", "crowd", "signs", "twilight", "activism"],
+  "exif": {
+    "camera": "Canon EOS R6m2",
+    "lens": "RF35mm F1.8 MACRO IS STM",
+    "aperture": "1.8",
+    "iso": "4000",
+    "focal_length": "35.0",
+    "shutter_speed": "1/50"
+  }
+}
+```
